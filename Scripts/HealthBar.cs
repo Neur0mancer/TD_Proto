@@ -6,6 +6,7 @@ public class HealthBar : MonoBehaviour
 {
     [SerializeField] private HealthSystem healthSystem;
     private Transform barTransform;
+    private Transform separatorContainer;
 
     private void Awake()
     {
@@ -14,10 +15,13 @@ public class HealthBar : MonoBehaviour
 
     private void Start()
     {
+        separatorContainer = transform.Find("separatorContainer");
         healthSystem.OnDamaged += HealthSystem_OnDamaged;
         healthSystem.OnHealed += HealthSystem_OnHealed;
+        healthSystem.OnHealthChanged += HealthSystem_OnHealthChanged;
         UpdateBar();
         UpdateHealthBarVisible();
+        ConstructHealthBarSeparators();
     }
 
     private void HealthSystem_OnDamaged(object sender, System.EventArgs e)
@@ -29,6 +33,34 @@ public class HealthBar : MonoBehaviour
     {
         UpdateBar();
         UpdateHealthBarVisible();
+    }
+    private void HealthSystem_OnHealthChanged(object sender, System.EventArgs e)
+    {
+        ConstructHealthBarSeparators();
+    }
+    private void ConstructHealthBarSeparators()
+    {        
+        Transform separatorTemplate = separatorContainer.Find("separatorTemplate");
+        separatorTemplate.gameObject.SetActive(false);
+
+        foreach(Transform separatorTransform in separatorContainer)
+        {
+            if (separatorTransform == separatorTemplate) continue;
+            
+            Destroy(separatorTransform.gameObject);
+        }
+
+        int healthAmountPerSeparator = 10;
+        int healthSeparatorCount = Mathf.FloorToInt(healthSystem.GetHealthAmountMax() / healthAmountPerSeparator);
+        float barSize = 3f;
+        float barOneHealthAmountSize = barSize / healthSystem.GetHealthAmountMax();
+
+        for (int i = 1; i < healthSeparatorCount; i++)
+        {
+            Transform separatorTransform = Instantiate(separatorTemplate, separatorContainer);
+            separatorTransform.gameObject.SetActive(true);
+            separatorTransform.localPosition = new Vector3(barOneHealthAmountSize * i * healthAmountPerSeparator, 0, 0);
+        }
     }
 
     private void UpdateBar()
